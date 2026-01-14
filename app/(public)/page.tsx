@@ -1,7 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/auth/context';
 import { Button } from '@/components/ui/button';
 import {
   Wrench,
@@ -20,7 +20,13 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in without initializing full auth
+    const storedUser = localStorage.getItem('tradepilot_user');
+    setIsAuthenticated(!!storedUser);
+  }, []);
 
   const features = [
     {
