@@ -219,12 +219,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setProfile(null);
       localStorage.removeItem('tradepilot_user');
+
+      // Redirect to homepage
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear local state even if MSAL logout fails
       setUser(null);
       setProfile(null);
       localStorage.removeItem('tradepilot_user');
+
+      // Redirect to homepage
+      window.location.href = '/';
     }
   };
 
@@ -272,8 +278,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
     setProfile(null);
     localStorage.removeItem('tradepilot_user');
-    // Redirect to login
-    window.location.href = '/auth/login';
+    // Redirect to homepage
+    window.location.href = '/';
   }, [refreshToken]);
 
   const value: AuthContextType = {
