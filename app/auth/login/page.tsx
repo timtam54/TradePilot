@@ -1,0 +1,154 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '@/lib/auth/context';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+
+export default function LoginPage() {
+  const { isAuthenticated, isLoading, loginWithMicrosoft, loginWithGoogle } = useAuth();
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setGoogleLoading(true);
+      setError(null);
+      try {
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        const userInfo = await userInfoResponse.json();
+
+        // Pass user info directly to auth context
+        await loginWithGoogle({
+          sub: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name,
+          access_token: tokenResponse.access_token,
+        });
+        router.push('/dashboard');
+      } catch (err) {
+        console.error('Google login failed:', err);
+        setError('Failed to sign in with Google. Please try again.');
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error('Google login error:', error);
+      setError('Google sign-in was cancelled or failed.');
+    },
+  });
+
+  const handleMicrosoftLogin = async () => {
+    setError(null);
+    try {
+      await loginWithMicrosoft();
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Microsoft login failed:', err);
+      setError('Failed to sign in with Microsoft. Please try again.');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-2xl font-bold text-primary-foreground">
+            TP
+          </div>
+          <CardTitle className="text-2xl">Welcome to TradePilot</CardTitle>
+          <CardDescription>
+            Sign in to manage your jobs, customers, and invoices
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          <Button
+            variant="outline"
+            className="w-full h-12"
+            onClick={() => googleLogin()}
+            disabled={googleLoading}
+          >
+            {googleLoading ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+            ) : (
+              <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+            )}
+            Continue with Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full h-12"
+            onClick={handleMicrosoftLogin}
+          >
+            <svg className="mr-2 h-5 w-5" viewBox="0 0 21 21" fill="none">
+              <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+              <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+              <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+              <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+            </svg>
+            Continue with Microsoft
+          </Button>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
