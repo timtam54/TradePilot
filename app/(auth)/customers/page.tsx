@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Phone, Mail, MapPin, MoreHorizontal, UserCheck } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, MoreHorizontal, UserCheck, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   const fetchCustomers = async () => {
     if (!user) return;
@@ -132,6 +133,45 @@ export default function CustomersPage() {
     }
   };
 
+  const syncFromXero = async () => {
+    if (!user) return;
+
+    setSyncing(true);
+    try {
+      const response = await fetch('/api/customers/sync-xero', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${user.access_token}`,
+          'X-Auth-Provider': user.provider,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Sync Complete',
+          description: `${data.created} created, ${data.updated} updated from Xero`,
+        });
+        fetchCustomers();
+      } else {
+        toast({
+          title: 'Sync Failed',
+          description: data.error || 'Failed to sync from Xero',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync from Xero',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const needsFollowUp = (customer: Customer) => {
     if (!customer.last_contacted_at) return true;
     if (customer.follow_up_date && new Date(customer.follow_up_date) <= new Date()) return true;
@@ -145,12 +185,22 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold">Customers</h1>
           <p className="text-muted-foreground">Manage your customer database</p>
         </div>
-        <Button asChild>
-          <Link href="/customers/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={syncFromXero} disabled={syncing}>
+            {syncing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {syncing ? 'Syncing...' : 'Sync from Xero'}
+          </Button>
+          <Button asChild>
+            <Link href="/customers/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -198,17 +248,26 @@ export default function CustomersPage() {
                   {customers.map((customer) => (
                     <TableRow key={customer.id}>
                       <TableCell>
-                        <Link
-                          href={`/customers/${customer.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {customer.name}
-                        </Link>
-                        {needsFollowUp(customer) && (
-                          <Badge variant="warning" className="ml-2">
-                            Follow up
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/customers/${customer.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {customer.name}
+                          </Link>
+                          {customer.xero_contact_id && (
+                            <div className="h-4 w-4 rounded bg-[#13B5EA] flex items-center justify-center" title="Synced from Xero">
+                              <svg viewBox="0 0 24 24" className="h-3 w-3 text-white" fill="currentColor">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 14.833l-1.953 1.953c-.195.195-.512.195-.707 0l-3.181-3.181-3.181 3.181c-.195.195-.512.195-.707 0l-1.953-1.953c-.195-.195-.195-.512 0-.707l3.181-3.181-3.181-3.181c-.195-.195-.195-.512 0-.707l1.953-1.953c.195-.195.512-.195.707 0l3.181 3.181 3.181-3.181c.195-.195.512-.195.707 0l1.953 1.953c.195.195.195.512 0 .707l-3.181 3.181 3.181 3.181c.195.195.195.512 0 .707z"/>
+                              </svg>
+                            </div>
+                          )}
+                          {needsFollowUp(customer) && (
+                            <Badge variant="warning">
+                              Follow up
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">

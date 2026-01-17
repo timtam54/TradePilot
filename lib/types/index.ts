@@ -8,7 +8,10 @@ export type Trade =
   | 'hvac'
   | 'painter'
   | 'landscaper'
-  | 'general';
+  | 'roofer'
+  | 'tiler'
+  | 'glazier'
+  | 'other';
 
 // Job status progression
 export type JobStatus =
@@ -64,6 +67,7 @@ export interface Customer {
   notes?: string;
   last_contacted_at?: string;
   follow_up_date?: string;
+  xero_contact_id?: string;
   created_at: string;
   updated_at: string;
   // Computed fields
@@ -196,6 +200,7 @@ export interface Supplier {
   place_id?: string;
   rating?: number;
   notes?: string;
+  xero_contact_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -265,6 +270,58 @@ export interface AuthUser {
   provider: 'microsoft' | 'google';
   access_token: string;
   profile?: Profile;
+}
+
+// AI Estimate Types
+export interface AIEstimateLabour {
+  description: string;
+  hours: number;
+  rate: number;
+  total: number;
+}
+
+export interface AIEstimateMaterialConfirmed {
+  job_material_id: string;
+  name: string;
+  qty: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface AIEstimateMaterialSuggested {
+  name: string;
+  qty: number;
+  reason: string;
+  estimated_price: number;
+}
+
+export interface AIEstimateResponse {
+  labour: AIEstimateLabour[];
+  materials_confirmed: AIEstimateMaterialConfirmed[];
+  materials_suggested: AIEstimateMaterialSuggested[];
+  confidence: number; // 0-100
+  confidence_reasoning: string;
+  notes: string;
+  totals: {
+    labour_total: number;
+    materials_total: number;
+    subtotal: number;
+    tax: number;
+    grand_total: number;
+  };
+}
+
+// AI Job Insights Types
+export interface AIJobInsights {
+  summary: string;
+  estimated_hours: number | null;
+  hours_reasoning: string;
+  best_arrival_time: string | null;
+  arrival_reasoning: string;
+  weather_risk_score: number; // 0-100
+  weather_factors: string[];
+  risks: { title: string; severity: 'low' | 'medium' | 'high' }[];
+  suggestions: string[];
 }
 
 // API Response wrapper

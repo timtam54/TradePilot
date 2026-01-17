@@ -15,6 +15,10 @@ import {
   Trash2,
   Plus,
   Sparkles,
+  User,
+  Mail,
+  Phone,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +30,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -43,6 +48,10 @@ import { formatCurrency, formatDate, formatDateTime, getStatusColor, formatDurat
 import { useToast } from '@/lib/hooks/use-toast';
 import { AddMaterialDialog } from '@/components/jobs/add-material-dialog';
 import { AddLabourDialog } from '@/components/jobs/add-labour-dialog';
+import { JobLifecycleStepper } from '@/components/jobs/job-lifecycle-stepper';
+import { AIEstimateDialog } from '@/components/jobs/ai-estimate-dialog';
+import { AIInsightsPanel } from '@/components/jobs/ai-insights-panel';
+import { CreateQuoteDialog } from '@/components/jobs/create-quote-dialog';
 
 const statusOptions: { value: JobStatus; label: string }[] = [
   { value: 'quote', label: 'Quote' },
@@ -70,6 +79,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true);
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
   const [labourDialogOpen, setLabourDialogOpen] = useState(false);
+  const [estimateDialogOpen, setEstimateDialogOpen] = useState(false);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
 
   const fetchJob = async () => {
     if (!user) return;
@@ -219,6 +230,82 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
+      {/* Job Lifecycle Stepper */}
+      <Card>
+        <CardContent className="py-6">
+          <JobLifecycleStepper status={job.status} onStatusChange={updateStatus} />
+        </CardContent>
+      </Card>
+
+      {/* Customer & Site Info Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                {job.customer ? (
+                  <>
+                    <Link
+                      href={`/customers/${job.customer.id}`}
+                      className="font-semibold text-lg hover:underline"
+                    >
+                      {job.customer.name}
+                    </Link>
+                    {job.customer.email && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Mail className="h-3 w-3" />
+                        <a href={`mailto:${job.customer.email}`} className="hover:text-primary">
+                          {job.customer.email}
+                        </a>
+                      </div>
+                    )}
+                    {job.customer.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Phone className="h-3 w-3" />
+                        <a href={`tel:${job.customer.phone}`} className="hover:text-primary">
+                          {job.customer.phone}
+                        </a>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">No customer assigned</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Site Address</p>
+                {job.address ? (
+                  <>
+                    <p className="font-semibold">{job.address}</p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open in Maps
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">No address specified</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {/* Job Info */}
@@ -360,6 +447,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           </TableRow>
                         ))}
                       </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={3} className="font-medium">Subtotal</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(job.materials.reduce((sum, m) => sum + (m.line_total || 0), 0))}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
                     </Table>
                   ) : (
                     <p className="text-center py-8 text-muted-foreground">
@@ -399,6 +494,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                           </TableRow>
                         ))}
                       </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={3} className="font-medium">Subtotal</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(job.labour.reduce((sum, l) => sum + (l.total || 0), 0))}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
                     </Table>
                   ) : (
                     <p className="text-center py-8 text-muted-foreground">
@@ -450,6 +553,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Insights Panel */}
+          <AIInsightsPanel jobId={id} />
+
           {/* Totals Card */}
           <Card>
             <CardHeader>
@@ -484,15 +590,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" asChild>
-                <Link href={`/invoices/new?job=${id}`}>Create Invoice</Link>
+              <Button className="w-full" onClick={() => setEstimateDialogOpen(true)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                AI Estimate
               </Button>
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/chat">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Get AI Insights
-                </Link>
-              </Button>
+              {job.status === 'quote' ? (
+                <Button variant="outline" className="w-full" onClick={() => setQuoteDialogOpen(true)}>
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  Create Quote
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/invoices/new?job=${id}`}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Create Invoice
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -503,6 +617,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         onOpenChange={setMaterialDialogOpen}
         jobId={id}
         onSuccess={fetchJob}
+        existingMaterials={job.materials || []}
       />
 
       <AddLabourDialog
@@ -511,6 +626,22 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         jobId={id}
         labourRate={job.labour_rate}
         onSuccess={fetchJob}
+        existingLabour={job.labour || []}
+      />
+
+      <AIEstimateDialog
+        open={estimateDialogOpen}
+        onOpenChange={setEstimateDialogOpen}
+        jobId={id}
+      />
+
+      <CreateQuoteDialog
+        open={quoteDialogOpen}
+        onOpenChange={setQuoteDialogOpen}
+        jobId={id}
+        jobTitle={job.title}
+        materialsTotal={job.totals?.materials || 0}
+        labourTotal={job.totals?.labour || 0}
       />
     </div>
   );

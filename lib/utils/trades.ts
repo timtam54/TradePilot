@@ -253,8 +253,98 @@ export const tradeConfigs: Record<Trade, TradeConfig> = {
     weatherSensitiveJobs: ['Planting', 'Concrete work', 'Paving'],
     aiContext: 'Landscaping design, plant knowledge, hardscaping',
   },
-  general: {
-    name: 'General Trade',
+  roofer: {
+    name: 'Roofer',
+    defaultLabourRate: 85,
+    jobTypes: [
+      'Roof replacement',
+      'Roof repair',
+      'Tile replacement',
+      'Metal roofing',
+      'Gutter installation',
+      'Gutter cleaning',
+      'Flashing repair',
+      'Roof inspection',
+    ],
+    materialCategories: [
+      'Roofing Tiles',
+      'Metal Sheets',
+      'Gutters',
+      'Flashing',
+      'Underlays',
+      'Fasteners',
+      'Sealants',
+    ],
+    supplierCategories: [
+      'Roofing Supplier',
+      'Metal Supplier',
+      'Building Supplies',
+    ],
+    weatherSensitiveJobs: ['Roof replacement', 'Roof repair', 'Metal roofing', 'Tile replacement'],
+    aiContext: 'Australian roofing trade, roof safety, metal and tile roofing expertise',
+  },
+  tiler: {
+    name: 'Tiler',
+    defaultLabourRate: 80,
+    jobTypes: [
+      'Bathroom tiling',
+      'Kitchen splashback',
+      'Floor tiling',
+      'Wall tiling',
+      'Outdoor tiling',
+      'Pool tiling',
+      'Tile repair',
+      'Waterproofing',
+    ],
+    materialCategories: [
+      'Tiles',
+      'Adhesives',
+      'Grout',
+      'Waterproofing',
+      'Trims',
+      'Spacers',
+      'Tools',
+    ],
+    supplierCategories: [
+      'Tile Store',
+      'Building Supplies',
+      'Waterproofing Specialist',
+    ],
+    weatherSensitiveJobs: ['Outdoor tiling', 'Pool tiling'],
+    aiContext: 'Professional tiling, waterproofing, Australian standards compliance',
+  },
+  glazier: {
+    name: 'Glazier',
+    defaultLabourRate: 85,
+    jobTypes: [
+      'Window replacement',
+      'Glass repair',
+      'Shower screen',
+      'Splashback',
+      'Mirror installation',
+      'Double glazing',
+      'Balustrade',
+      'Shopfront',
+    ],
+    materialCategories: [
+      'Glass',
+      'Mirrors',
+      'Frames',
+      'Seals',
+      'Hardware',
+      'Adhesives',
+      'Safety Film',
+    ],
+    supplierCategories: [
+      'Glass Supplier',
+      'Window Supplier',
+      'Hardware Store',
+    ],
+    weatherSensitiveJobs: ['External glazing'],
+    aiContext: 'Glass installation, safety glass standards, window systems',
+  },
+  other: {
+    name: 'Other',
     defaultLabourRate: 75,
     jobTypes: [
       'Handyman work',
@@ -286,7 +376,7 @@ export const tradeConfigs: Record<Trade, TradeConfig> = {
 };
 
 export function getTradeConfig(trade: Trade): TradeConfig {
-  return tradeConfigs[trade] || tradeConfigs.general;
+  return tradeConfigs[trade] || tradeConfigs.other;
 }
 
 export function getDefaultLabourRate(trade: Trade): number {
@@ -309,10 +399,13 @@ export const tradeOptions: { value: Trade; label: string }[] = [
   { value: 'electrician', label: 'Electrician' },
   { value: 'plumber', label: 'Plumber' },
   { value: 'builder', label: 'Builder' },
-  { value: 'mechanic', label: 'Mechanic' },
   { value: 'carpenter', label: 'Carpenter' },
-  { value: 'hvac', label: 'HVAC Technician' },
   { value: 'painter', label: 'Painter' },
+  { value: 'mechanic', label: 'Mechanic' },
+  { value: 'hvac', label: 'HVAC Technician' },
   { value: 'landscaper', label: 'Landscaper' },
-  { value: 'general', label: 'General Trade' },
+  { value: 'roofer', label: 'Roofer' },
+  { value: 'tiler', label: 'Tiler' },
+  { value: 'glazier', label: 'Glazier' },
+  { value: 'other', label: 'Other' },
 ];
